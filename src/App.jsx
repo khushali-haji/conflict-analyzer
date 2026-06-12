@@ -39,6 +39,13 @@ const PIN = {
   conflict: "#93a886",   // sage green
   timeline: "#c9a96a",   // muted gold
 };
+// Translucent ring color per pin, used by the radiating pulse animation.
+const RING = {
+  incident: "rgba(95,138,155,0.5)",
+  actor_base: "rgba(197,138,125,0.5)",
+  conflict: "rgba(147,168,134,0.5)",
+  timeline: "rgba(201,169,106,0.5)",
+};
 
 // Deselect the active timeline event when the user clicks empty map space.
 // (Leaflet stops marker clicks from bubbling here, so pin clicks still select.)
@@ -60,6 +67,7 @@ function App() {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [selectedTimeline, setSelectedTimeline] = useState(null);
   const [hoverTimeline, setHoverTimeline] = useState(null);
+  const [deepError, setDeepError] = useState(false);
   const [popover, setPopover] = useState(null); // { idx, left, width, bottom }
   const [scrollTick, setScrollTick] = useState(0);
 
@@ -144,20 +152,8 @@ function App() {
          setResult(prev => prev ? { ...prev, all_locations: locData.all_locations || [] } : prev);
       }).catch(e => console.error("Locations failed:", e));
 
-      // 3. Fetch Deep Analysis (Timeline & Bias) Automatically
-      fetch("http://localhost:3001/api/analyze/deep", {
-           method: "POST",
-           headers: { "Content-Type": "application/json" },
-           body: JSON.stringify({ sessionId })
-      }).then(r => r.json()).then(deepData => {
-         setResult(prev => prev ? { 
-            ...prev, 
-            timeline: deepData.timeline || [],
-            verification_links: deepData.verification_links || [],
-            publication_analysis: deepData.publication_analysis || {},
-            bias_check: deepData.bias_check || {}
-         } : prev);
-      }).catch(e => console.error("Deep analysis failed:", e));
+      // 3. Fetch Deep Analysis (Timeline & Bias) Automatically (retryable)
+      runDeepAnalysis(sessionId);
 
     } catch (err) {
       let msg = err.message;
@@ -168,6 +164,34 @@ function App() {
       }
       setError(msg);
       setLoading(false);
+    }
+  };
+
+  // Deep analysis (timeline + bias) runs in the background and is retryable on failure.
+  const runDeepAnalysis = async (sessionId) => {
+    if (!sessionId) return;
+    setDeepError(false);
+    // Reset to the loading state (spinners) while it runs / re-runs.
+    setResult(prev => prev ? { ...prev, timeline: undefined, verification_links: undefined, publication_analysis: undefined, bias_check: undefined } : prev);
+    try {
+      const r = await fetch("http://localhost:3001/api/analyze/deep", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      if (!r.ok) throw new Error("Deep analysis request failed");
+      const deepData = await r.json();
+      if (deepData.error) throw new Error(deepData.error);
+      setResult(prev => prev ? {
+        ...prev,
+        timeline: deepData.timeline || [],
+        verification_links: deepData.verification_links || [],
+        publication_analysis: deepData.publication_analysis || {},
+        bias_check: deepData.bias_check || {},
+      } : prev);
+    } catch (e) {
+      console.error("Deep analysis failed:", e);
+      setDeepError(true);
     }
   };
 
@@ -243,12 +267,14 @@ function App() {
     <div className="dashboard">
       <div className="map-background">
         <MapContainer center={activeCoords} zoom={activeZoom} zoomControl={false} style={{ height: "100%", width: "100%" }}>
-          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+          <TileLayer attribution='Tiles &copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" />
+          {/* Political boundaries + soft gray labels (styled to match the light base — no black halo) */}
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
           
           <MapClickHandler onClear={() => setSelectedTimeline(null)} />
 
           {result?.details?.lat !== undefined && result?.details?.lon !== undefined && !isNaN(result.details.lat) && !isNaN(result.details.lon) && (
-            <Marker position={[result.details.lat, result.details.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker incident-marker" style="background: ${PIN.incident};"></div>`, iconSize:[22,22], iconAnchor:[11,11] })}>
+            <Marker position={[result.details.lat, result.details.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker incident-marker" style="background: ${PIN.incident}; --ring: ${RING.incident};"></div>`, iconSize:[22,22], iconAnchor:[11,11] })}>
               <Popup><div style={{color:"black"}}><strong>{result.details.location || "Unknown Location"}</strong><br/>Incident Site</div></Popup>
             </Marker>
           )}
@@ -262,7 +288,7 @@ function App() {
             })
             .map((loc, idx) => (
             loc?.lat !== undefined && loc?.lon !== undefined && !isNaN(loc.lat) && !isNaN(loc.lon) && (
-              <Marker key={idx} position={[loc.lat, loc.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker" style="background: ${loc.type === 'actor_base' ? PIN.actor_base : PIN.conflict};"></div>`, iconSize:[18,18], iconAnchor:[9,9] })}>
+              <Marker key={idx} position={[loc.lat, loc.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker" style="background: ${loc.type === 'actor_base' ? PIN.actor_base : PIN.conflict}; --ring: ${loc.type === 'actor_base' ? RING.actor_base : RING.conflict};"></div>`, iconSize:[18,18], iconAnchor:[9,9] })}>
                 <Popup><div style={{color:"black"}}><strong>{loc.name || "Unnamed Area"}</strong><br/>{loc.description || "No description provided."}</div></Popup>
               </Marker>
             )
@@ -279,10 +305,10 @@ function App() {
                   mouseout: () => setHoverTimeline(null),
                 }}
                 icon={selectedTimeline === idx
-                  ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-selected" style="background: ${PIN.timeline};"></div>`, iconSize:[20,20], iconAnchor:[10,10] })
+                  ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-selected" style="background: ${PIN.timeline}; --ring: ${RING.timeline};"></div>`, iconSize:[20,20], iconAnchor:[10,10] })
                   : hoverTimeline === idx
-                    ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-hover" style="background: ${PIN.timeline};"></div>`, iconSize:[16,16], iconAnchor:[8,8] })
-                    : L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker" style="background: ${PIN.timeline}; width: 11px; height: 11px;"></div>`, iconSize:[11,11], iconAnchor:[6,6] })}
+                    ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-hover" style="background: ${PIN.timeline}; --ring: ${RING.timeline};"></div>`, iconSize:[16,16], iconAnchor:[8,8] })
+                    : L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker" style="background: ${PIN.timeline}; --ring: ${RING.timeline}; width: 11px; height: 11px;"></div>`, iconSize:[11,11], iconAnchor:[6,6] })}
               />
             )
           ))}
@@ -293,7 +319,7 @@ function App() {
       <div className="overlays">
         <div className="overlay-panel header-panel">
           <div className="header-content">
-            <button className="back-btn" onClick={() => setResult(null)}>← New Analysis</button>
+            <button className="back-btn" onClick={() => setResult(null)}>← Analyze another clip</button>
             <h1 style={{ fontSize: "2rem" }}>Conflict Lens</h1>
             <div className="section-title" style={{ marginTop: 16 }}>Key Details</div>
             <div className="details-grid">
@@ -334,7 +360,12 @@ function App() {
             
             <div className="section-title">Journalistic Analysis</div>
             <div className="analysis-box">
-              {result.bias_check === undefined ? (
+              {deepError ? (
+                <div className="analysis-error">
+                  <p>Deep analysis couldn’t be completed — the model may be busy or rate-limited.</p>
+                  <button className="retry-btn" onClick={() => runDeepAnalysis(activeSessionId)}>↻ Retry analysis</button>
+                </div>
+              ) : result.bias_check === undefined ? (
                 <div className="analysis-item" style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                    <div style={{width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite'}} />
                    <span style={{color: 'var(--text-dim)'}}>Performing deep bias analysis...</span>
@@ -356,6 +387,11 @@ function App() {
                 </>
               )}
             </div>
+
+            <div className="powered-by">
+              AI analysis by Google Gemini · Verification links via web search.
+              <span>Generated content may contain errors — verify against original sources.</span>
+            </div>
           </div>
         </div>
 
@@ -369,7 +405,12 @@ function App() {
               <span className="legend-item"><span className="legend-dot" style={{ background: PIN.timeline }} />Timeline event</span>
             </div>
           </div>
-           {result.timeline === undefined ? (
+           {deepError ? (
+              <div className="analysis-error" style={{ margin: '12px 24px' }}>
+                 <p>Timeline couldn’t be extracted.</p>
+                 <button className="retry-btn" onClick={() => runDeepAnalysis(activeSessionId)}>↻ Retry</button>
+              </div>
+           ) : result.timeline === undefined ? (
               <div style={{display: 'flex', alignItems: 'center', padding: '24px', gap: '12px'}}>
                  <div style={{width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite'}} />
                  <span style={{color: 'var(--text-dim)'}}>Extracting historical timeline...</span>
@@ -378,6 +419,7 @@ function App() {
               <div style={{padding: '24px', color: 'var(--text-dim)'}}>No timeline events found in this article.</div>
            ) : (
             <div className="timeline-scroll" onScroll={() => setScrollTick((t) => t + 1)}>
+              <div className="timeline-inner">
               <div className="timeline-track" />
               {result.timeline?.map((ev, i) => (
                 <div
@@ -393,6 +435,7 @@ function App() {
                   <div className="timeline-text">{ev.event}</div>
                 </div>
               ))}
+              </div>
             </div>
            )}
         </div>

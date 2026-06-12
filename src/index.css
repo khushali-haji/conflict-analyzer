@@ -10,7 +10,7 @@
   --text-serif: #dee2de;
   --text-dim: #8a968a;
   --warning: #d4a017;
-  --danger: #ef4444;
+  --danger: #c5786b;
   --glass: blur(12px);
   --border-radius: 12px;
   
@@ -19,17 +19,17 @@
   --timeline-height: 152px;
 }
 
-/* LIGHT/HIGH-CONTRAST THEME (Dashboard Only) */
+/* LIGHT / WARM THEME (Dashboard) — warm neutrals + sage accents, charcoal text */
 .dashboard {
-  --bg-dash: #f0f2f5;
-  --panel-bg: #ffffff;
-  --panel-bg-glass: rgba(255, 255, 255, 0.95);
-  --panel-border-dash: rgba(0, 0, 0, 0.12);
-  --accent-dash: #5c7c59;
-  --accent-bright-dash: #4a6348;
-  --text-main-dash: #2c3e50;
-  --text-serif-dash: #34495e;
-  --text-dim-dash: #7f8c8d;
+  --bg-dash: #f4f2ec;
+  --panel-bg: #fbfaf6;
+  --panel-bg-glass: rgba(250, 249, 244, 0.88);
+  --panel-border-dash: rgba(0, 0, 0, 0.10);
+  --accent-dash: #5c7c59;        /* sage — all UI chrome shares this family */
+  --accent-bright-dash: #46603f; /* deep sage (readable on light) */
+  --text-main-dash: #2b2a26;     /* warm charcoal */
+  --text-serif-dash: #3d3b35;    /* warm dark */
+  --text-dim-dash: #79766c;      /* warm muted */
 }
 
 * {
@@ -227,7 +227,7 @@ h1, .serif-heading {
   letter-spacing: 0.12em;
   color: var(--accent-bright-dash);
   margin-bottom: 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
   padding-bottom: 4px;
 }
 
@@ -252,7 +252,7 @@ h1, .serif-heading {
 
 .analysis-item { margin-bottom: 16px; }
 .analysis-item h4 { font-size: 0.75rem; color: var(--accent-bright-dash); margin-bottom: 4px; border-left: 2px solid var(--accent-dash); padding-left: 6px; }
-.analysis-item p { font-size: 0.85rem; color: #444; line-height: 1.5; }
+.analysis-item p { font-size: 0.85rem; color: var(--text-serif-dash); line-height: 1.5; }
 
 /* Timeline */
 .timeline-header {
@@ -270,38 +270,43 @@ h1, .serif-heading {
   flex-shrink: 0;
 }
 
-.timeline-scroll { display: flex; align-items: flex-start; gap: 16px; padding: 22px 24px 14px; overflow-x: auto; position: relative; }
-/* Connector axis line threading the event nodes (#2) */
+.timeline-scroll { padding: 22px 24px 14px; overflow-x: auto; position: relative; }
+/* Inner wrapper sized to the full card row so the connector spans every card, even when scrolled */
+.timeline-inner { position: relative; display: flex; align-items: flex-start; gap: 16px; width: max-content; }
+/* Connector axis line threading the event nodes (#2) — spans the full inner width */
 .timeline-track {
-  position: absolute; top: 10px; left: 24px; right: 24px; height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(147,168,134,0.55) 6%, rgba(147,168,134,0.55) 94%, transparent);
+  position: absolute; top: -10px; left: 0; right: 0; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(147,168,134,0.65) 4%, rgba(147,168,134,0.65) 96%, transparent);
   pointer-events: none;
 }
 .timeline-event {
-  position: relative; flex: 0 0 210px; cursor: pointer; background: #fff;
-  padding: 10px 12px; border-radius: 8px; border: 1px solid #e3e3e3;
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  position: relative; flex: 0 0 210px; cursor: pointer;
+  background: #fbfaf6;
+  padding: 11px 13px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
-/* Node where each card meets the timeline axis — gold, matching its map pin */
+/* Node where each card meets the timeline axis — solid sage, same colour as the line */
 .timeline-node {
-  position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
-  width: 9px; height: 9px; border-radius: 50%;
-  background: #c9a96a; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+  position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #93a886;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 /* Hover & selected: faint sage fill (whole card, no harsh ring). .hovered = synced from pin hover */
 .timeline-event:hover,
 .timeline-event.hovered,
 .timeline-event.active {
-  background: rgba(147, 168, 134, 0.20);
+  background: rgba(147, 168, 134, 0.18);
   border-color: rgba(147, 168, 134, 0.55);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+  box-shadow: 0 8px 20px rgba(95, 110, 88, 0.16);
+  transform: translateY(-2px);
 }
 .timeline-event:hover .timeline-node,
 .timeline-event.hovered .timeline-node,
 .timeline-event.active .timeline-node {
-  transform: translateX(-50%) scale(1.5);
-  box-shadow: 0 0 0 3px rgba(201,169,106,0.35);
+  transform: translateX(-50%) scale(1.45);
+  box-shadow: 0 0 0 4px rgba(147,168,134,0.30);
 }
 .timeline-date { font-size: 0.7rem; font-weight: 800; color: var(--accent-dash); margin-bottom: 2px; }
 /* Card text stays a fixed 2-line preview — full text lives in the floating popover */
@@ -314,9 +319,9 @@ h1, .serif-heading {
 .timeline-popover {
   position: fixed; z-index: 2000; pointer-events: none;
   box-sizing: border-box;
-  background: #fbfcf9; border: 1px solid rgba(147,168,134,0.6);
+  background: #fbfaf6; border: 1px solid rgba(147,168,134,0.55);
   border-radius: 10px; padding: 12px 14px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
   max-height: 46vh; overflow: hidden;
   animation: popIn 0.14s ease;
 }
@@ -328,8 +333,8 @@ h1, .serif-heading {
 /* Back Button */
 .back-btn {
   background: transparent;
-  border: 1px solid #ccc;
-  color: #555;
+  border: 1px solid rgba(0,0,0,0.18);
+  color: var(--text-dim-dash);
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
@@ -337,11 +342,11 @@ h1, .serif-heading {
   margin-bottom: 8px;
   transition: all 0.2s;
 }
-.back-btn:hover { background: #eee; }
+.back-btn:hover { background: rgba(0,0,0,0.05); color: var(--text-main-dash); }
 
 /* Shared Spinner */
 .spinner {
-  width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.05);
+  width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.08);
   border-top-color: var(--accent); border-radius: 50%;
   animation: spin 1s linear infinite; margin: 0 auto;
 }
@@ -357,42 +362,56 @@ h1, .serif-heading {
   background: var(--accent-dash, var(--accent));
   border: 2px solid #fff;
   border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   cursor: pointer;
+  /* Every pin radiates a soft ring in its own colour (--ring set inline) */
+  animation: pulse-ring 2.6s infinite cubic-bezier(0.4, 0, 0.6, 1);
   transition: transform 0.15s ease;
 }
 /* Grow a touch on hover — applies to every pin */
 .custom-marker:hover { transform: scale(1.35); }
-/* Primary incident pin: larger, with a soft continuous pulse */
-.incident-marker {
-  width: 18px; height: 18px;
-  animation: pulse 2.6s infinite cubic-bezier(0.4, 0, 0.6, 1);
+
+/* One ring animation reused by all pins; colour comes from each pin's --ring var.
+   A subtle static drop-shadow is kept in every keyframe for depth. */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 1px 3px rgba(0,0,0,0.30), 0 0 0 0 var(--ring, rgba(0,0,0,0.4)); }
+  70%  { box-shadow: 0 1px 3px rgba(0,0,0,0.30), 0 0 0 9px rgba(0,0,0,0); }
+  100% { box-shadow: 0 1px 3px rgba(0,0,0,0.30), 0 0 0 0 rgba(0,0,0,0); }
 }
+
+/* Primary incident pin: larger, slightly slower breathing ring */
+.incident-marker { width: 18px; height: 18px; animation-duration: 2.9s; }
 /* Timeline pin enlarged when its card is hovered (two-way sync, #1) */
-.timeline-marker-hover {
-  width: 16px; height: 16px; border-width: 2px;
-  box-shadow: 0 0 0 3px rgba(201,169,106,0.30), 0 1px 4px rgba(0,0,0,0.35);
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(0, 0, 0, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
-}
-
-/* Selected timeline pin: larger, muted-gold pulse */
-.timeline-marker-selected {
-  width: 16px; height: 16px; border-width: 3px;
-  animation: pulse-selected 1.4s infinite cubic-bezier(0.4, 0, 0.6, 1);
-}
-@keyframes pulse-selected {
-  0% { box-shadow: 0 0 0 0 rgba(201, 169, 106, 0.65); }
-  70% { box-shadow: 0 0 0 11px rgba(201, 169, 106, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(201, 169, 106, 0); }
-}
+.timeline-marker-hover { width: 16px; height: 16px; }
+/* Selected timeline pin: larger and a faster, more insistent ring */
+.timeline-marker-selected { width: 18px; height: 18px; border-width: 3px; animation-duration: 1.4s; }
 
 /* Verification Links */
 .link-list { display: flex; flex-direction: column; gap: 8px; }
-.verify-link { color: #2980b9; text-decoration: none; font-size: 0.85rem; font-weight: 500; }
-.verify-link:hover { text-decoration: underline; }
-.verify-outlet { font-weight: 800; font-size: 0.65rem; text-transform: uppercase; margin-right: 6px; color: var(--text-serif-dash); }
+.verify-link { color: var(--text-serif-dash); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: color 0.15s ease; }
+.verify-link:hover { color: var(--accent-bright-dash); text-decoration: underline; }
+.verify-outlet { font-weight: 800; font-size: 0.65rem; text-transform: uppercase; margin-right: 6px; color: var(--accent-dash); }
+
+/* Deep-analysis failure state with retry */
+.analysis-error {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 14px 16px; border-radius: 10px;
+  background: rgba(197, 138, 125, 0.10); border: 1px solid rgba(197, 138, 125, 0.35);
+}
+.analysis-error p { margin: 0; font-size: 0.82rem; color: var(--text-serif-dash); line-height: 1.45; }
+.retry-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 7px; cursor: pointer;
+  font-size: 0.78rem; font-weight: 700;
+  background: var(--accent-dash); color: #fff; border: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.retry-btn:hover { background: var(--accent-bright-dash); transform: translateY(-1px); }
+
+/* Subtle AI attribution footnote */
+.powered-by {
+  margin-top: 18px; padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  font-size: 0.66rem; line-height: 1.5; color: var(--text-dim-dash);
+  letter-spacing: 0.01em;
+}
+.powered-by span { display: block; margin-top: 2px; opacity: 0.8; font-style: italic; }
