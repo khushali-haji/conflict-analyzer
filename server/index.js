@@ -67,7 +67,11 @@ async function askGemini(text, prompt, customPrompt) {
       aiData = await apiResponse.json();
 
       if (aiData.error) {
-        const isRetryable = aiData.error.code === 429 || aiData.error.code === 503 || aiData.error.message.includes("high demand") || aiData.error.message.includes("busy");
+        const errMsg = aiData.error.message || "";
+        // Quota-exceeded is NOT worth retrying — retrying just burns more of the limit.
+        // Only retry transient "server busy / overloaded" conditions (503 / high demand).
+        const isQuota = aiData.error.code === 429 && /quota|free_tier/i.test(errMsg);
+        const isRetryable = !isQuota && (aiData.error.code === 503 || /high demand|busy|overloaded/i.test(errMsg));
         if (isRetryable && i < retries - 1) {
           console.log(`⚠️ Gemini busy on ${modelName} (Attempt ${i + 1}/${retries}). Retrying...`);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -216,7 +220,7 @@ app.post("/api/analyze/deep", async (req, res) => {
       { "date": "...", "event": "3-5 lead-up historical context events", "location": "...", "lat": 12.34, "lon": 56.78 }
     ],
     "verification_links": [
-      { "outlet": "Associated Press|Reuters|DW|etc.", "link": "https://...", "reason": "Why this is a good cross-reference" }
+      { "outlet": "Associated Press|Reuters|DW|etc.", "domain": "the outlet's bare domain, e.g. reuters.com, apnews.com, dw.com", "query": "3-6 keyword search phrase a reader would use to find this exact story on that outlet (no quotes, no operators)", "reason": "5-8 words MAX. Specific to THIS outlet's distinct angle on THIS story, never generic boilerplate. e.g. 'Independent Gaza casualty figures', 'On-ground Khartoum eyewitness reporting', 'German-EU diplomatic perspective'. No full sentences." }
     ],
     "publication_analysis": {
       "lean": "Analyze the INSTITUTION ITSELF (e.g., Al Jazeera, NYT). Lean: Left/Center/Right/State-owned/etc.",

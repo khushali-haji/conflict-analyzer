@@ -16,7 +16,7 @@
   
   /* Shared Dimensions */
   --sidebar-width: 320px;
-  --timeline-height: 140px;
+  --timeline-height: 152px;
 }
 
 /* LIGHT/HIGH-CONTRAST THEME (Dashboard Only) */
@@ -255,14 +255,75 @@ h1, .serif-heading {
 .analysis-item p { font-size: 0.85rem; color: #444; line-height: 1.5; }
 
 /* Timeline */
-.timeline-scroll { display: flex; gap: 16px; padding: 12px 16px; overflow-x: auto; }
-.timeline-event {
-  flex: 0 0 200px; cursor: pointer; background: white;
-  padding: 10px; border-radius: 8px; border: 1px solid #ddd; transition: all 0.2s;
+.timeline-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px 16px; padding: 14px 24px 6px 24px;
 }
-.timeline-event:hover { border-color: var(--accent-dash); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.legend-item {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.68rem; font-weight: 600; color: var(--text-dim-dash);
+}
+.legend-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+  flex-shrink: 0;
+}
+
+.timeline-scroll { display: flex; align-items: flex-start; gap: 16px; padding: 22px 24px 14px; overflow-x: auto; position: relative; }
+/* Connector axis line threading the event nodes (#2) */
+.timeline-track {
+  position: absolute; top: 10px; left: 24px; right: 24px; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(147,168,134,0.55) 6%, rgba(147,168,134,0.55) 94%, transparent);
+  pointer-events: none;
+}
+.timeline-event {
+  position: relative; flex: 0 0 210px; cursor: pointer; background: #fff;
+  padding: 10px 12px; border-radius: 8px; border: 1px solid #e3e3e3;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+/* Node where each card meets the timeline axis — gold, matching its map pin */
+.timeline-node {
+  position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #c9a96a; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+/* Hover & selected: faint sage fill (whole card, no harsh ring). .hovered = synced from pin hover */
+.timeline-event:hover,
+.timeline-event.hovered,
+.timeline-event.active {
+  background: rgba(147, 168, 134, 0.20);
+  border-color: rgba(147, 168, 134, 0.55);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+}
+.timeline-event:hover .timeline-node,
+.timeline-event.hovered .timeline-node,
+.timeline-event.active .timeline-node {
+  transform: translateX(-50%) scale(1.5);
+  box-shadow: 0 0 0 3px rgba(201,169,106,0.35);
+}
 .timeline-date { font-size: 0.7rem; font-weight: 800; color: var(--accent-dash); margin-bottom: 2px; }
-.timeline-text { font-size: 0.85rem; color: var(--text-main-dash); line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; display: -webkit-box; overflow: hidden; }
+/* Card text stays a fixed 2-line preview — full text lives in the floating popover */
+.timeline-text {
+  font-size: 0.85rem; color: var(--text-main-dash); line-height: 1.45;
+  -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; display: -webkit-box; overflow: hidden;
+}
+
+/* Floating full-text popover: pops up and out of the panel, never clipped */
+.timeline-popover {
+  position: fixed; z-index: 2000; pointer-events: none;
+  box-sizing: border-box;
+  background: #fbfcf9; border: 1px solid rgba(147,168,134,0.6);
+  border-radius: 10px; padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+  max-height: 46vh; overflow: hidden;
+  animation: popIn 0.14s ease;
+}
+.timeline-popover-text {
+  font-size: 0.85rem; color: var(--text-main-dash); line-height: 1.5;
+}
+@keyframes popIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Back Button */
 .back-btn {
@@ -290,20 +351,44 @@ h1, .serif-heading {
 
 /* Leaflet Container Correction */
 .leaflet-container { height: 100%; width: 100%; }
-.custom-marker { 
-  width: 14px; 
-  height: 14px; 
-  background: var(--accent-dash, var(--accent)); 
-  border: 2px solid #fff; 
+.custom-marker {
+  width: 14px;
+  height: 14px;
+  background: var(--accent-dash, var(--accent));
+  border: 2px solid #fff;
   border-radius: 50%;
-  animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
-  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+/* Grow a touch on hover — applies to every pin */
+.custom-marker:hover { transform: scale(1.35); }
+/* Primary incident pin: larger, with a soft continuous pulse */
+.incident-marker {
+  width: 18px; height: 18px;
+  animation: pulse 2.6s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+/* Timeline pin enlarged when its card is hovered (two-way sync, #1) */
+.timeline-marker-hover {
+  width: 16px; height: 16px; border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(201,169,106,0.30), 0 1px 4px rgba(0,0,0,0.35);
 }
 
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4); }
   70% { box-shadow: 0 0 0 6px rgba(0, 0, 0, 0); }
   100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+}
+
+/* Selected timeline pin: larger, muted-gold pulse */
+.timeline-marker-selected {
+  width: 16px; height: 16px; border-width: 3px;
+  animation: pulse-selected 1.4s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+@keyframes pulse-selected {
+  0% { box-shadow: 0 0 0 0 rgba(201, 169, 106, 0.65); }
+  70% { box-shadow: 0 0 0 11px rgba(201, 169, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(201, 169, 106, 0); }
 }
 
 /* Verification Links */

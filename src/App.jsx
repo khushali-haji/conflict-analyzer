@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useState, useEffect, useLayoutEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -21,6 +21,32 @@ function ChangeView({ center, zoom }) {
   return null;
 }
 
+// Build a guaranteed-valid verification link from the model's outlet + query.
+// The model can't reliably produce real article URLs, so instead of trusting a
+// hallucinated deep link we construct a domain-scoped search that always resolves
+// and surfaces the actual matching article at the top of the results.
+function buildVerificationUrl(v) {
+  const query = (v?.query || v?.outlet || "").trim();
+  const domain = (v?.domain || "").trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const scoped = domain ? `${query} site:${domain}` : query;
+  return `https://www.google.com/search?q=${encodeURIComponent(scoped)}`;
+}
+
+// Muted, harmonious pin palette (keyed off the sage-green accent) — no bright primaries.
+const PIN = {
+  incident: "#5f8a9b",   // muted teal-blue
+  actor_base: "#c58a7d", // muted terracotta
+  conflict: "#93a886",   // sage green
+  timeline: "#c9a96a",   // muted gold
+};
+
+// Deselect the active timeline event when the user clicks empty map space.
+// (Leaflet stops marker clicks from bubbling here, so pin clicks still select.)
+function MapClickHandler({ onClear }) {
+  useMapEvents({ click: onClear });
+  return null;
+}
+
 function App() {
   const [url, setUrl] = useState("");
   const [file, setFile] = useState(null);
@@ -32,6 +58,23 @@ function App() {
   const [activeZoom, setActiveZoom] = useState(3);
   const [dragging, setDragging] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState(null);
+  const [selectedTimeline, setSelectedTimeline] = useState(null);
+  const [hoverTimeline, setHoverTimeline] = useState(null);
+  const [popover, setPopover] = useState(null); // { idx, left, width, bottom }
+  const [scrollTick, setScrollTick] = useState(0);
+
+  // The event whose full text should pop out: hover takes priority, else the selected one.
+  const popoverIdx = hoverTimeline != null ? hoverTimeline : selectedTimeline;
+
+  // Measure the active card and anchor a floating popover to its bottom edge so the
+  // full text pops UP and OUT of the panel (escaping its clipping) without resizing the card.
+  useLayoutEffect(() => {
+    if (popoverIdx == null) { setPopover(null); return; }
+    const el = document.getElementById(`timeline-card-${popoverIdx}`);
+    if (!el) { setPopover(null); return; }
+    const r = el.getBoundingClientRect();
+    setPopover({ idx: popoverIdx, left: r.left, width: r.width, bottom: window.innerHeight - r.bottom });
+  }, [popoverIdx, scrollTick, result]);
 
   const analyze = async () => {
     if (mode === "url" && !url) return;
@@ -128,11 +171,15 @@ function App() {
     }
   };
 
-  const handleTimelineClick = (ev) => {
+  const selectTimeline = (ev, idx) => {
+    setSelectedTimeline(idx);
     if (ev.lat && ev.lon) {
       setActiveCoords([ev.lat, ev.lon]);
       setActiveZoom(8);
     }
+    // Bring the matching card into view when triggered from a map pin
+    const card = document.getElementById(`timeline-card-${idx}`);
+    if (card) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
   // Phase 1: Original Landing Page
@@ -198,8 +245,12 @@ function App() {
         <MapContainer center={activeCoords} zoom={activeZoom} zoomControl={false} style={{ height: "100%", width: "100%" }}>
           <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
           
+          <MapClickHandler onClear={() => setSelectedTimeline(null)} />
+
           {result?.details?.lat !== undefined && result?.details?.lon !== undefined && !isNaN(result.details.lat) && !isNaN(result.details.lon) && (
-            <Marker position={[result.details.lat, result.details.lon]}><Popup><div style={{color:"black"}}><strong>{result.details.location || "Unknown Location"}</strong><br/>Incident Site</div></Popup></Marker>
+            <Marker position={[result.details.lat, result.details.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker incident-marker" style="background: ${PIN.incident};"></div>`, iconSize:[22,22], iconAnchor:[11,11] })}>
+              <Popup><div style={{color:"black"}}><strong>{result.details.location || "Unknown Location"}</strong><br/>Incident Site</div></Popup>
+            </Marker>
           )}
 
           {result?.all_locations === undefined ? null : (result.all_locations || [])
@@ -211,7 +262,7 @@ function App() {
             })
             .map((loc, idx) => (
             loc?.lat !== undefined && loc?.lon !== undefined && !isNaN(loc.lat) && !isNaN(loc.lon) && (
-              <Marker key={idx} position={[loc.lat, loc.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker" style="background: ${loc.type === 'actor_base' ? '#ef4444' : '#93a886'};"></div>`, iconSize:[18,18], iconAnchor:[9,9] })}>
+              <Marker key={idx} position={[loc.lat, loc.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker" style="background: ${loc.type === 'actor_base' ? PIN.actor_base : PIN.conflict};"></div>`, iconSize:[18,18], iconAnchor:[9,9] })}>
                 <Popup><div style={{color:"black"}}><strong>{loc.name || "Unnamed Area"}</strong><br/>{loc.description || "No description provided."}</div></Popup>
               </Marker>
             )
@@ -219,9 +270,20 @@ function App() {
 
           {result?.timeline === undefined ? null : (result.timeline || []).map((ev, idx) => (
             ev?.lat !== undefined && ev?.lon !== undefined && !isNaN(ev.lat) && !isNaN(ev.lon) && (
-              <Marker key={`time-${idx}`} position={[ev.lat, ev.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker" style="background: #fbbf24; width: 10px; height: 10px; border-width: 1px;"></div>`, iconSize:[10,10], iconAnchor:[5,5] })}>
-                <Popup><div style={{color:"black"}}><strong>{ev.date || "Date Unknown"}</strong><br/>{ev.event || "Event description missing."}</div></Popup>
-              </Marker>
+              <Marker
+                key={`time-${idx}`}
+                position={[ev.lat, ev.lon]}
+                eventHandlers={{
+                  click: () => selectTimeline(ev, idx),
+                  mouseover: () => setHoverTimeline(idx),
+                  mouseout: () => setHoverTimeline(null),
+                }}
+                icon={selectedTimeline === idx
+                  ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-selected" style="background: ${PIN.timeline};"></div>`, iconSize:[20,20], iconAnchor:[10,10] })
+                  : hoverTimeline === idx
+                    ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-hover" style="background: ${PIN.timeline};"></div>`, iconSize:[16,16], iconAnchor:[8,8] })
+                    : L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker" style="background: ${PIN.timeline}; width: 11px; height: 11px;"></div>`, iconSize:[11,11], iconAnchor:[6,6] })}
+              />
             )
           ))}
           <ChangeView center={activeCoords} zoom={activeZoom} />
@@ -285,7 +347,7 @@ function App() {
                   <div className="analysis-item"><h4>Verification Sources</h4>
                     <div className="link-list">
                       {(result?.verification_links || []).map((v, i) => (
-                        <a key={i} href={v.link} target="_blank" rel="noreferrer" className="verify-link">
+                        <a key={i} href={buildVerificationUrl(v)} target="_blank" rel="noreferrer" className="verify-link">
                           <span className="verify-outlet">{v.outlet || "Unknown Source"}</span> {v.reason || "Verification details missing."}
                         </a>
                       ))}
@@ -298,7 +360,15 @@ function App() {
         </div>
 
         <div className="overlay-panel timeline-panel">
-          <div className="section-title" style={{ padding: "16px 24px 0 24px" }}>Lead-up Events Timeline</div>
+          <div className="timeline-header">
+            <div className="section-title" style={{ padding: 0 }}>Lead-up Events Timeline</div>
+            <div className="map-legend">
+              <span className="legend-item"><span className="legend-dot" style={{ background: PIN.incident }} />Incident site</span>
+              <span className="legend-item"><span className="legend-dot" style={{ background: PIN.actor_base }} />Actor base</span>
+              <span className="legend-item"><span className="legend-dot" style={{ background: PIN.conflict }} />Conflict area</span>
+              <span className="legend-item"><span className="legend-dot" style={{ background: PIN.timeline }} />Timeline event</span>
+            </div>
+          </div>
            {result.timeline === undefined ? (
               <div style={{display: 'flex', alignItems: 'center', padding: '24px', gap: '12px'}}>
                  <div style={{width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite'}} />
@@ -307,9 +377,18 @@ function App() {
            ) : result.timeline.length === 0 ? (
               <div style={{padding: '24px', color: 'var(--text-dim)'}}>No timeline events found in this article.</div>
            ) : (
-            <div className="timeline-scroll">
+            <div className="timeline-scroll" onScroll={() => setScrollTick((t) => t + 1)}>
+              <div className="timeline-track" />
               {result.timeline?.map((ev, i) => (
-                <div key={i} className="timeline-event" onClick={() => handleTimelineClick(ev)}>
+                <div
+                  key={i}
+                  id={`timeline-card-${i}`}
+                  className={`timeline-event ${selectedTimeline === i ? "active" : ""} ${hoverTimeline === i ? "hovered" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); selectTimeline(ev, i); }}
+                  onMouseEnter={() => setHoverTimeline(i)}
+                  onMouseLeave={() => setHoverTimeline(null)}
+                >
+                  <span className="timeline-node" />
                   <div className="timeline-date">{ev.date}</div>
                   <div className="timeline-text">{ev.event}</div>
                 </div>
@@ -317,6 +396,17 @@ function App() {
             </div>
            )}
         </div>
+
+        {/* Floating full-text popover — pops out above the panel, card stays fixed-size */}
+        {popover && result?.timeline?.[popover.idx] && (
+          <div
+            className="timeline-popover"
+            style={{ left: popover.left, width: popover.width, bottom: popover.bottom }}
+          >
+            <div className="timeline-date">{result.timeline[popover.idx].date}</div>
+            <div className="timeline-popover-text">{result.timeline[popover.idx].event}</div>
+          </div>
+        )}
       </div>
     </div>
   );
