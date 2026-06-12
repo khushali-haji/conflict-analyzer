@@ -11,6 +11,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+
 function ChangeView({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
@@ -95,7 +98,7 @@ function App() {
     try {
       let initResponse;
       if (mode === "url") {
-        initResponse = await fetch("http://localhost:3001/api/init", {
+        initResponse = await fetch(`${API_BASE_URL}/api/init`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url }),
@@ -103,7 +106,7 @@ function App() {
       } else {
         const formData = new FormData();
         formData.append("pdf", file);
-        initResponse = await fetch("http://localhost:3001/api/init-pdf", {
+        initResponse = await fetch(`${API_BASE_URL}/api/init-pdf`, {
           method: "POST",
           body: formData,
         });
@@ -120,7 +123,7 @@ function App() {
       let coreData = {};
       // 1. Get Core Data (Summary, Actors, Main Location)
       try {
-        const coreRes = await fetch("http://localhost:3001/api/analyze/core", {
+        const coreRes = await fetch(`${API_BASE_URL}/api/analyze/core`, {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ sessionId })
@@ -144,7 +147,7 @@ function App() {
       }
 
       // 2. Fetch Deep Map Locations in Background
-      fetch("http://localhost:3001/api/analyze/locations", {
+      fetch(`${API_BASE_URL}/api/analyze/locations`, {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ sessionId })
@@ -174,7 +177,7 @@ function App() {
     // Reset to the loading state (spinners) while it runs / re-runs.
     setResult(prev => prev ? { ...prev, timeline: undefined, verification_links: undefined, publication_analysis: undefined, bias_check: undefined } : prev);
     try {
-      const r = await fetch("http://localhost:3001/api/analyze/deep", {
+      const r = await fetch(`${API_BASE_URL}/api/analyze/deep`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId }),
