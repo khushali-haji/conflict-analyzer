@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -21,6 +21,39 @@ function ChangeView({ center, zoom }) {
       map.flyTo(center, zoom || 10, { duration: 1.5 });
     }
   }, [center, zoom, map]);
+  return null;
+}
+
+// Fit the map to the tightest view that shows every pin (incident + locations + timeline).
+// Re-runs whenever the set of pins changes (pins load progressively).
+function FitAllPins({ result }) {
+  const map = useMap();
+  const nLoc = result?.all_locations?.length;
+  const nTime = result?.timeline?.length;
+  useEffect(() => {
+    if (!result) return;
+    const pts = [];
+    const push = (lat, lon) => {
+      const a = Number(lat), b = Number(lon);
+      if (lat != null && lon != null && !isNaN(a) && !isNaN(b)) pts.push([a, b]);
+    };
+    push(result.details?.lat, result.details?.lon);
+    (result.all_locations || []).forEach((l) => push(l?.lat, l?.lon));
+    (result.timeline || []).forEach((e) => push(e?.lat, e?.lon));
+    if (pts.length === 0) return;
+
+    if (pts.length === 1) {
+      map.flyTo(pts[0], 6, { duration: 1.0 });
+      return;
+    }
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    // Keep pins clear of the overlay panels / mobile bars.
+    const pad = isMobile
+      ? { paddingTopLeft: [30, 70], paddingBottomRight: [30, 90] }
+      : { paddingTopLeft: [40, 110], paddingBottomRight: [340, 180] };
+    map.flyToBounds(L.latLngBounds(pts), { ...pad, duration: 1.1, maxZoom: 10 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, result?.details?.lat, result?.details?.lon, nLoc, nTime]);
   return null;
 }
 
@@ -73,6 +106,23 @@ function App() {
   const [deepError, setDeepError] = useState(false);
   const [popover, setPopover] = useState(null); // { idx, left, width, bottom }
   const [scrollTick, setScrollTick] = useState(0);
+  const [sheet, setSheet] = useState(null); // mobile bottom sheet: null | 'details' | 'summary' | 'timeline'
+  const mapRef = useRef(null);
+
+  // On mobile, lift the active pin above an open bottom sheet so it isn't covered.
+  const liftMapForSheet = () => {
+    const map = mapRef.current;
+    if (!map || !window.matchMedia("(max-width: 768px)").matches) return;
+    setTimeout(() => map.panBy([0, Math.round(window.innerHeight * 0.26)], { animate: true }), 60);
+  };
+
+  const openSheet = (name) => {
+    setSheet((cur) => {
+      const next = cur === name ? null : name;
+      if (next) liftMapForSheet();
+      return next;
+    });
+  };
 
   // The event whose full text should pop out: hover takes priority, else the selected one.
   const popoverIdx = hoverTimeline != null ? hoverTimeline : selectedTimeline;
@@ -199,15 +249,19 @@ function App() {
     }
   };
 
-  const selectTimeline = (ev, idx) => {
+  const selectTimeline = (ev, idx, fromPin = false) => {
     setSelectedTimeline(idx);
     if (ev.lat && ev.lon) {
       setActiveCoords([ev.lat, ev.lon]);
       setActiveZoom(8);
     }
-    // Bring the matching card into view when triggered from a map pin
-    const card = document.getElementById(`timeline-card-${idx}`);
-    if (card) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    // Tapping a map pin auto-opens the Timeline sheet on mobile
+    if (fromPin) { setSheet("timeline"); liftMapForSheet(); }
+    // Bring the matching card into view (after the sheet has a chance to render)
+    setTimeout(() => {
+      const card = document.getElementById(`timeline-card-${idx}`);
+      if (card) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }, fromPin ? 120 : 0);
   };
 
   // Phase 1: Original Landing Page
@@ -275,12 +329,12 @@ function App() {
   return (
     <div className="dashboard">
       <div className="map-background">
-        <MapContainer center={activeCoords} zoom={activeZoom} zoomControl={false} style={{ height: "100%", width: "100%" }}>
-          <TileLayer attribution='Tiles &copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" />
-          {/* Political boundaries + soft gray labels (styled to match the light base — no black halo) */}
-          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
+        <MapContainer center={activeCoords} zoom={activeZoom} zoomControl={false} style={{ height: "100%", width: "100%" }} ref={mapRef}>
+          <TileLayer className="base-tiles" attribution='Tiles &copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+          {/* Boundaries + light place labels designed to sit over dark imagery */}
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}" />
           
-          <MapClickHandler onClear={() => setSelectedTimeline(null)} />
+          <MapClickHandler onClear={() => { setSelectedTimeline(null); setSheet(null); }} />
 
           {result?.details?.lat !== undefined && result?.details?.lon !== undefined && !isNaN(result.details.lat) && !isNaN(result.details.lon) && (
             <Marker position={[result.details.lat, result.details.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker incident-marker" style="background: ${PIN.incident}; --ring: ${RING.incident};"></div>`, iconSize:[22,22], iconAnchor:[11,11] })}>
@@ -309,7 +363,7 @@ function App() {
                 key={`time-${idx}`}
                 position={[ev.lat, ev.lon]}
                 eventHandlers={{
-                  click: () => selectTimeline(ev, idx),
+                  click: () => selectTimeline(ev, idx, true),
                   mouseover: () => setHoverTimeline(idx),
                   mouseout: () => setHoverTimeline(null),
                 }}
@@ -322,11 +376,19 @@ function App() {
             )
           ))}
           <ChangeView center={activeCoords} zoom={activeZoom} />
+          <FitAllPins result={result} />
         </MapContainer>
       </div>
 
+      {/* Mobile-only top bar (sits over the map) */}
+      <div className="m-topbar">
+        <span className="m-title">Conflict Lens</span>
+        <button className="m-back" onClick={() => setResult(null)}>← Analyze another clip</button>
+      </div>
+
       <div className="overlays">
-        <div className="overlay-panel header-panel">
+        <div className={`overlay-panel header-panel${sheet === "details" ? " open" : ""}`}>
+          <button className="sheet-close" onClick={() => setSheet(null)} aria-label="Close">✕</button>
           <div className="header-content">
             <button className="back-btn" onClick={() => setResult(null)}>← Analyze another clip</button>
             <h1 style={{ fontSize: "2rem" }}>Conflict Lens</h1>
@@ -354,7 +416,8 @@ function App() {
           </div>
         </div>
 
-        <div className="overlay-panel sidebar-panel">
+        <div className={`overlay-panel sidebar-panel${sheet === "summary" ? " open" : ""}`}>
+          <button className="sheet-close" onClick={() => setSheet(null)} aria-label="Close">✕</button>
           <div className="sidebar-content">
             <div className="section-title">Incident Summary</div>
             <div className="summary-box">
@@ -404,7 +467,8 @@ function App() {
           </div>
         </div>
 
-        <div className="overlay-panel timeline-panel">
+        <div className={`overlay-panel timeline-panel${sheet === "timeline" ? " open" : ""}`}>
+          <button className="sheet-close" onClick={() => setSheet(null)} aria-label="Close">✕</button>
           <div className="timeline-header">
             <div className="section-title" style={{ padding: 0 }}>Lead-up Events Timeline</div>
             <div className="map-legend">
@@ -459,6 +523,13 @@ function App() {
             <div className="timeline-popover-text">{result.timeline[popover.idx].event}</div>
           </div>
         )}
+
+        {/* Mobile-only bottom pills — tap to open each sheet */}
+        <div className="m-pills">
+          <button className={`m-pill${sheet === "details" ? " active" : ""}`} onClick={() => openSheet("details")}>Key Details</button>
+          <button className={`m-pill${sheet === "summary" ? " active" : ""}`} onClick={() => openSheet("summary")}>Summary</button>
+          <button className={`m-pill${sheet === "timeline" ? " active" : ""}`} onClick={() => openSheet("timeline")}>Timeline</button>
+        </div>
       </div>
     </div>
   );

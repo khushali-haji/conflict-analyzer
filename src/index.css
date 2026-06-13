@@ -384,7 +384,10 @@ h1, .serif-heading {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Leaflet Container Correction */
-.leaflet-container { height: 100%; width: 100%; }
+.leaflet-container { height: 100%; width: 100%; background: #20262b; }
+
+/* Fully black & white satellite base */
+.base-tiles { filter: grayscale(1) brightness(0.95) contrast(0.98); }
 .custom-marker {
   width: 14px;
   height: 14px;
@@ -402,9 +405,9 @@ h1, .serif-heading {
 /* One ring animation reused by all pins; colour comes from each pin's --ring var.
    A subtle static drop-shadow is kept in every keyframe for depth. */
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 1px 3px rgba(0,0,0,0.30), 0 0 0 0 var(--ring, rgba(0,0,0,0.4)); }
-  70%  { box-shadow: 0 1px 3px rgba(0,0,0,0.30), 0 0 0 9px rgba(0,0,0,0); }
-  100% { box-shadow: 0 1px 3px rgba(0,0,0,0.30), 0 0 0 0 rgba(0,0,0,0); }
+  0%   { box-shadow: 0 1px 5px rgba(0,0,0,0.6), 0 0 0 0 var(--ring, rgba(0,0,0,0.4)); }
+  70%  { box-shadow: 0 1px 5px rgba(0,0,0,0.6), 0 0 0 9px rgba(0,0,0,0); }
+  100% { box-shadow: 0 1px 5px rgba(0,0,0,0.6), 0 0 0 0 rgba(0,0,0,0); }
 }
 
 /* Primary incident pin: larger, slightly slower breathing ring */
@@ -445,56 +448,94 @@ h1, .serif-heading {
 }
 .powered-by span { display: block; margin-top: 2px; opacity: 0.8; font-style: italic; }
 
+/* Mobile chrome is hidden on desktop */
+.m-topbar, .m-pills, .sheet-close { display: none; }
+
 /* =========================================
-   MOBILE DASHBOARD: stacked, scrollable layout
-   (map becomes a sized section; floating panels become stacked cards)
+   MOBILE DASHBOARD: map base + bottom-sheet panels
    ========================================= */
 @media (max-width: 768px) {
-  html, body, #root { height: auto; min-height: 100%; }
+  /* Map stays the fullscreen base, explorable underneath the chrome */
+  .map-background { z-index: 0; }
+  .overlays { pointer-events: none; }
 
-  .dashboard {
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 12px;
+  /* Compact top bar over the map */
+  .m-topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1400;
+    padding: 10px 14px;
+    background: linear-gradient(to bottom, rgba(244,242,236,0.96), rgba(244,242,236,0.0));
+    pointer-events: auto;
+  }
+  .m-title { font-family: 'Newsreader', serif; font-size: 1.15rem; font-weight: 600; color: var(--text-main-dash); }
+  .m-back {
+    background: rgba(255,255,255,0.85); border: 1px solid rgba(0,0,0,0.12);
+    color: var(--text-main-dash); font-size: 0.72rem; font-weight: 600;
+    padding: 7px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap;
   }
 
-  /* Map: from fullscreen background to a sized block at the top */
-  .map-background {
-    position: relative;
-    height: 45vh;
-    min-height: 300px;
-    order: 2;
-    border-radius: 12px;
-    overflow: hidden;
+  /* Bottom nav bar — one continuous bar split into three equal segments */
+  .m-pills {
+    display: flex; gap: 0;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1450;
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+    background: #fbfaf6;
+    border-top: 1px solid rgba(0,0,0,0.14);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.10);
+    pointer-events: auto;
   }
+  .m-pill {
+    flex: 1; min-height: 52px;
+    background: transparent; border: none;
+    border-right: 1px solid rgba(0,0,0,0.10);
+    color: var(--text-main-dash); font-size: 0.8rem; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .m-pill:last-child { border-right: none; }
+  .m-pill.active { background: var(--accent-dash); color: #fff; }
 
-  /* Let the panels join the dashboard's flex column so we can order them */
-  .overlays { display: contents; }
-
+  /* Panels become bottom sheets that slide up over the map */
   .overlay-panel {
-    position: static;
-    width: 100% !important;
-    height: auto !important;
-    max-height: none;
-    overflow: visible;
+    position: fixed !important; left: 0; right: 0; bottom: 0; top: auto !important;
+    width: 100% !important; height: auto !important;
+    max-height: 64vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    border-radius: 0;
+    transform: translateY(110%); transition: transform 0.28s ease;
+    z-index: 1460; pointer-events: auto;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+    padding-bottom: 76px; /* clear the pills bar */
   }
-  .header-panel  { order: 1; }   /* Key Details */
-  .sidebar-panel { order: 3; }   /* Summary + Analysis */
-  .timeline-panel { order: 4; }  /* Timeline */
+  .overlay-panel.open { transform: translateY(0); }
+  .header-panel, .sidebar-panel, .timeline-panel { align-self: stretch; justify-self: stretch; }
 
-  .sidebar-content { overflow-y: visible; }
+  /* A small drag-handle affordance at the top of each sheet */
+  .overlay-panel::before {
+    content: ""; flex: 0 0 auto; display: block;
+    width: 38px; height: 4px; margin: 8px auto 2px; border-radius: 2px;
+    background: rgba(0,0,0,0.18);
+  }
 
-  /* Touch: no hover popover — tap a card to expand its full text inline */
+  /* Close (X) button on each sheet */
+  .sheet-close {
+    display: block; position: absolute; top: 12px; right: 12px; z-index: 2;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(0,0,0,0.06); border: none; color: var(--text-main-dash);
+    font-size: 0.85rem; cursor: pointer;
+  }
+
+  /* In the Key Details sheet, the title/back live in the top bar instead */
+  .header-panel .back-btn, .header-panel h1 { display: none; }
+
+  .sidebar-content, .header-content { padding: 8px 18px 18px; overflow: visible; }
+
+  /* Timeline sheet: cards expand inline (no hover popover on touch) */
   .timeline-popover { display: none !important; }
-  .timeline-event { flex-basis: 220px; }
   .timeline-event.active .timeline-text,
   .timeline-event.hovered .timeline-text {
     -webkit-line-clamp: unset; line-clamp: unset; display: block; overflow: visible;
   }
-  /* Bigger tap target for the map pins */
+
+  /* Bigger tap target for map pins */
   .custom-marker { width: 18px; height: 18px; }
 }
