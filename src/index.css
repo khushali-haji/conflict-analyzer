@@ -384,10 +384,13 @@ h1, .serif-heading {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Leaflet Container Correction */
-.leaflet-container { height: 100%; width: 100%; background: #20262b; }
+.leaflet-container { height: 100%; width: 100%; background: #d9dde0; }
 
-/* Fully black & white satellite base */
-.base-tiles { filter: grayscale(1) brightness(0.95) contrast(0.98); }
+/* Near-monochrome relief base — just the barest hint of colour left.
+   Scoped to the base layer only, so labels and pins keep their own colour. */
+.base-tiles {
+  filter: grayscale(0.9) brightness(0.97) contrast(1.02);
+}
 .custom-marker {
   width: 14px;
   height: 14px;
@@ -405,9 +408,9 @@ h1, .serif-heading {
 /* One ring animation reused by all pins; colour comes from each pin's --ring var.
    A subtle static drop-shadow is kept in every keyframe for depth. */
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 1px 5px rgba(0,0,0,0.6), 0 0 0 0 var(--ring, rgba(0,0,0,0.4)); }
-  70%  { box-shadow: 0 1px 5px rgba(0,0,0,0.6), 0 0 0 9px rgba(0,0,0,0); }
-  100% { box-shadow: 0 1px 5px rgba(0,0,0,0.6), 0 0 0 0 rgba(0,0,0,0); }
+  0%   { box-shadow: 0 1px 4px rgba(0,0,0,0.35), 0 0 0 0 var(--ring, rgba(0,0,0,0.4)); }
+  70%  { box-shadow: 0 1px 4px rgba(0,0,0,0.35), 0 0 0 9px rgba(0,0,0,0); }
+  100% { box-shadow: 0 1px 4px rgba(0,0,0,0.35), 0 0 0 0 rgba(0,0,0,0); }
 }
 
 /* Primary incident pin: larger, slightly slower breathing ring */

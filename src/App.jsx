@@ -330,9 +330,9 @@ function App() {
     <div className="dashboard">
       <div className="map-background">
         <MapContainer center={activeCoords} zoom={activeZoom} zoomControl={false} style={{ height: "100%", width: "100%" }} ref={mapRef}>
-          <TileLayer className="base-tiles" attribution='Tiles &copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-          {/* Boundaries + light place labels designed to sit over dark imagery */}
-          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}" />
+          <TileLayer className="base-tiles" attribution='Tiles &copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}" />
+          {/* Political boundaries + soft gray labels */}
+          <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
           
           <MapClickHandler onClear={() => { setSelectedTimeline(null); setSheet(null); }} />
 
