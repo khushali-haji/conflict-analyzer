@@ -244,6 +244,11 @@ function App() {
             </div>
           )}
           {error && <div style={{ color: "var(--danger)", textAlign: "center", marginTop: 24 }}>{error}</div>}
+
+          <p className="cold-start-note">
+            Heads up: the first analysis may take ~30–60 seconds. This demo runs on a free server that
+            sleeps when idle, so the initial request has to wake it up. Subsequent analyses are fast.
+          </p>
         </div>
       </div>
     );

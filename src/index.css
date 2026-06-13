@@ -164,6 +164,19 @@ h1, .serif-heading {
   font-style: italic;
 }
 
+.cold-start-note {
+  max-width: 460px;
+  margin: 28px auto 0;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  background: var(--accent-soft);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
 /* =========================================
    PHASE 2: DASHBOARD (LIGHT/CONTRAST OVERRIDES)
    ========================================= */
