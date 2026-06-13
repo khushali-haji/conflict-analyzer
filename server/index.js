@@ -44,7 +44,8 @@ setInterval(() => {
 
 // Helper to ask Gemini
 async function askGemini(text, prompt, customPrompt) {
-  const modelName = "gemini-2.5-flash";
+  // flash-lite has a separate (and more generous) free daily quota than flash.
+  const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
   let aiData;
   let retries = 3;
   let delay = 2000;
