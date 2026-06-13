@@ -164,17 +164,33 @@ h1, .serif-heading {
   font-style: italic;
 }
 
+.landing-error {
+  color: var(--danger);
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Mobile: stack the input and button so nothing spills outside the card */
+@media (max-width: 600px) {
+  .app-container { margin: 40px auto; }
+  .main-input-wrapper { padding: 24px; }
+  .input-section { flex-direction: column; gap: 10px; }
+  .landing-input { border-radius: 8px; width: 100%; }
+  .landing-button { border-radius: 8px; width: 100%; padding: 14px; }
+  .drop-zone { padding: 36px 20px; }
+}
+
 .cold-start-note {
   max-width: 460px;
   margin: 28px auto 0;
-  padding: 10px 16px;
   text-align: center;
   font-size: 0.74rem;
   line-height: 1.5;
   color: var(--text-dim);
-  background: var(--accent-soft);
-  border: 1px solid var(--panel-border);
-  border-radius: 8px;
 }
 
 /* =========================================
@@ -428,3 +444,57 @@ h1, .serif-heading {
   letter-spacing: 0.01em;
 }
 .powered-by span { display: block; margin-top: 2px; opacity: 0.8; font-style: italic; }
+
+/* =========================================
+   MOBILE DASHBOARD: stacked, scrollable layout
+   (map becomes a sized section; floating panels become stacked cards)
+   ========================================= */
+@media (max-width: 768px) {
+  html, body, #root { height: auto; min-height: 100%; }
+
+  .dashboard {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  /* Map: from fullscreen background to a sized block at the top */
+  .map-background {
+    position: relative;
+    height: 45vh;
+    min-height: 300px;
+    order: 2;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* Let the panels join the dashboard's flex column so we can order them */
+  .overlays { display: contents; }
+
+  .overlay-panel {
+    position: static;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none;
+    overflow: visible;
+  }
+  .header-panel  { order: 1; }   /* Key Details */
+  .sidebar-panel { order: 3; }   /* Summary + Analysis */
+  .timeline-panel { order: 4; }  /* Timeline */
+
+  .sidebar-content { overflow-y: visible; }
+
+  /* Touch: no hover popover — tap a card to expand its full text inline */
+  .timeline-popover { display: none !important; }
+  .timeline-event { flex-basis: 220px; }
+  .timeline-event.active .timeline-text,
+  .timeline-event.hovered .timeline-text {
+    -webkit-line-clamp: unset; line-clamp: unset; display: block; overflow: visible;
+  }
+  /* Bigger tap target for the map pins */
+  .custom-marker { width: 18px; height: 18px; }
+}

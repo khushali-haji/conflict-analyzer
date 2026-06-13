@@ -160,10 +160,11 @@ function App() {
 
     } catch (err) {
       let msg = err.message;
-      if (msg.toLowerCase().includes("busy") || msg.toLowerCase().includes("high demand") || msg.toLowerCase().includes("503")) {
-        msg = "Gemini is currently experiencing high demand. Please wait a few seconds and try again.";
-      } else if (msg.toLowerCase().includes("429")) {
-        msg = "Rate limit exceeded. Please wait a minute before trying again.";
+      const low = msg.toLowerCase();
+      if (low.includes("quota") || low.includes("429") || low.includes("rate limit")) {
+        msg = "Free API limit reached. Please wait a minute and try again.";
+      } else if (low.includes("busy") || low.includes("high demand") || low.includes("503")) {
+        msg = "The AI is busy right now. Please try again in a few seconds.";
       }
       setError(msg);
       setLoading(false);
@@ -215,7 +216,7 @@ function App() {
       <div className="app-container">
         <header className="header">
           <h1>Conflict Lens</h1>
-          <p>Condense noise into analysis. Geo-reference, verify, and contextualize <br /> global conflict reporting all in one place.</p>
+          <p>Condense noise into analysis. Geo-reference, verify, and contextualize global conflict reporting all in one place.</p>
         </header>
 
         <div className="input-tabs">
@@ -243,7 +244,7 @@ function App() {
               <button className="secondary-btn" onClick={analyze} disabled={!file} style={{ width: "100%", marginTop: 16, borderRadius: 8, height: 48, background: "var(--accent)", color: "#1a1e1a", fontWeight: "600", border: "none", cursor: "pointer" }}>Analyze Document</button>
             </div>
           )}
-          {error && <div style={{ color: "var(--danger)", textAlign: "center", marginTop: 24 }}>{error}</div>}
+          {error && <div className="landing-error">{error}</div>}
 
           <p className="cold-start-note">
             Heads up: the first analysis may take ~30–60 seconds. This demo runs on a free server that
