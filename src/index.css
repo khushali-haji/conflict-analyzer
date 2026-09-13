@@ -365,20 +365,21 @@ h1, .serif-heading {
 
 /* Back Button */
 .back-btn {
-  background: color-mix(in srgb, var(--accent-dash) 78%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent-dash) 78%, transparent);
-  color: #fff;
+  background: color-mix(in srgb, var(--accent-dash) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-dash) 45%, transparent);
+  color: var(--accent-bright-dash);
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.7rem;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-weight: 700;
+  margin-bottom: 22px;
   transition: all 0.2s;
 }
 .back-btn:hover {
   background: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
   border-color: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
+  color: #fff;
 }
 
 /* Shared Spinner */
@@ -480,14 +481,15 @@ h1, .serif-heading {
   }
   .m-title { font-family: 'Newsreader', serif; font-size: 1.15rem; font-weight: 600; color: var(--text-main-dash); }
   .m-back {
-    background: color-mix(in srgb, var(--accent-dash) 78%, transparent); border: 1px solid color-mix(in srgb, var(--accent-dash) 78%, transparent);
-    color: #fff; font-size: 0.72rem; font-weight: 600;
+    background: color-mix(in srgb, var(--accent-dash) 45%, transparent); border: 1px solid color-mix(in srgb, var(--accent-dash) 45%, transparent);
+    color: var(--accent-bright-dash); font-size: 0.72rem; font-weight: 700;
     padding: 7px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
   }
   .m-back:hover {
     background: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
     border-color: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
+    color: #fff;
   }
 
   /* Bottom nav bar — one continuous bar split into three equal segments */

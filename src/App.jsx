@@ -462,7 +462,7 @@ function App() {
 
             <div className="powered-by">
               AI analysis by Google Gemini · Verification links via web search.
-              <span>Generated content may contain errors — verify against original sources.</span>
+              <span>Generated content may contain errors. Verify against original sources.</span>
             </div>
           </div>
         </div>
