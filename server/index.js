@@ -235,10 +235,18 @@ app.post("/api/analyze/deep", async (req, res) => {
   if (!session) return res.status(400).json({ error: "Invalid session" });
 
   const prompt = `You are a deep journalistic analyst. Analyze this text for institutional bias and historical events. Ensure EVERY timeline event has a real-world latitude and longitude estimate, do NOT leave as 0.0.
+
+  Build a "timeline" of 6-12 events tracing the ACTUAL historical arc of this conflict. Do NOT limit it to the current news cycle or the article's publication year — a timeline that only covers the last few months is a failure. Distribute events across eras like this:
+  - 1800s: include ONLY if there is a genuine root cause here (colonial partition, an imperial border drawn, a founding treaty, etc.) that this conflict still traces back to. Do not invent one just to fill the slot.
+  - 1900s-1960s: include 1-2 foundational or turning-point events if relevant (e.g. independence, partition, founding of a state/organization/alliance tied to this conflict).
+  - 1970s-2000s: include events covering major escalations, wars, treaties, or regime changes specific to this conflict, if relevant.
+  - Last ~10-20 years: weight this era the heaviest — the most events and the most granular detail, since these connect most directly to the article.
+  Order the array chronologically from earliest to most recent.
+
   Respond ONLY with valid JSON:
   {
     "timeline": [
-      { "date": "...", "event": "3-5 lead-up historical context events", "location": "...", "lat": 12.34, "lon": 56.78 }
+      { "date": "...", "event": "one lead-up historical context event, per the era guidance above", "location": "...", "lat": 12.34, "lon": 56.78 }
     ],
     "verification_links": [
       { "outlet": "Associated Press|Reuters|DW|etc.", "domain": "the outlet's bare domain, e.g. reuters.com, apnews.com, dw.com", "query": "3-6 keyword search phrase a reader would use to find this exact story on that outlet (no quotes, no operators)", "reason": "5-8 words MAX. Specific to THIS outlet's distinct angle on THIS story, never generic boilerplate. e.g. 'Independent Gaza casualty figures', 'On-ground Khartoum eyewitness reporting', 'German-EU diplomatic perspective'. No full sentences." }
