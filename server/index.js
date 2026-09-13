@@ -236,11 +236,12 @@ app.post("/api/analyze/deep", async (req, res) => {
 
   const prompt = `You are a deep journalistic analyst. Analyze this text for institutional bias and historical events. Ensure EVERY timeline event has a real-world latitude and longitude estimate, do NOT leave as 0.0.
 
-  Build a "timeline" of 6-12 events tracing the ACTUAL historical arc of this conflict. Do NOT limit it to the current news cycle or the article's publication year — a timeline that only covers the last few months is a failure. Distribute events across eras like this:
+  Build a "timeline" of 6-12 events tracing the ACTUAL historical arc of this conflict. Do NOT limit it to the current news cycle or the article's publication year — a timeline that only covers the last few months is a failure. Equally, a timeline that jumps from old history straight to a single recent point is a failure. Distribute events across eras like this:
   - 1800s: include ONLY if there is a genuine root cause here (colonial partition, an imperial border drawn, a founding treaty, etc.) that this conflict still traces back to. Do not invent one just to fill the slot.
   - 1900s-1960s: include 1-2 foundational or turning-point events if relevant (e.g. independence, partition, founding of a state/organization/alliance tied to this conflict).
   - 1970s-2000s: include events covering major escalations, wars, treaties, or regime changes specific to this conflict, if relevant.
-  - Last ~10-20 years: weight this era the heaviest — the most events and the most granular detail, since these connect most directly to the article.
+  - Last ~10-20 years: broader recent buildup and context leading toward this story.
+  - REQUIRED, most recent window: at least 2-3 distinct events from the weeks/months immediately surrounding and including what THIS article describes. Do not compress the article's own developments into a single entry — pull out each separate key strike, statement, negotiation, or escalation it mentions and give it its own dated entry. Skipping straight from 2024 (or earlier) to only one 2026 (or current-year) point is exactly the failure to avoid: the recent, article-specific events are the most important ones and must be fully represented, not thinned out in favor of older history.
   Order the array chronologically from earliest to most recent.
 
   Respond ONLY with valid JSON:
