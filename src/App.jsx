@@ -144,7 +144,7 @@ function App() {
     setLoading(true);
     setError(null);
     setResult(null);
-    
+
     try {
       let initResponse;
       if (mode === "url") {
@@ -163,10 +163,10 @@ function App() {
       }
 
       if (!initResponse.ok) {
-         const err = await initResponse.json();
-         throw new Error(err.message || err.error || "Failed to initialize scraper");
+        const err = await initResponse.json();
+        throw new Error(err.message || err.error || "Failed to initialize scraper");
       }
-      
+
       const { sessionId } = await initResponse.json();
       setActiveSessionId(sessionId);
 
@@ -174,16 +174,16 @@ function App() {
       // 1. Get Core Data (Summary, Actors, Main Location)
       try {
         const coreRes = await fetch(`${API_BASE_URL}/api/analyze/core`, {
-           method: "POST",
-           headers: { "Content-Type": "application/json" },
-           body: JSON.stringify({ sessionId })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId })
         });
         if (!coreRes.ok) {
-            const err = await coreRes.json();
-            throw new Error(err.error || "Core analysis failed");
+          const err = await coreRes.json();
+          throw new Error(err.error || "Core analysis failed");
         }
         coreData = await coreRes.json();
-        
+
         // Show dashboard!
         setResult({ ...coreData });
         if (coreData.details?.lat !== undefined && coreData.details?.lon !== undefined) {
@@ -191,18 +191,18 @@ function App() {
           setActiveZoom(6);
         }
       } catch (err) {
-         throw err;
+        throw err;
       } finally {
         setLoading(false); // Remove big overlay spinner
       }
 
       // 2. Fetch Deep Map Locations in Background
       fetch(`${API_BASE_URL}/api/analyze/locations`, {
-           method: "POST",
-           headers: { "Content-Type": "application/json" },
-           body: JSON.stringify({ sessionId })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId })
       }).then(r => r.json()).then(locData => {
-         setResult(prev => prev ? { ...prev, all_locations: locData.all_locations || [] } : prev);
+        setResult(prev => prev ? { ...prev, all_locations: locData.all_locations || [] } : prev);
       }).catch(e => console.error("Locations failed:", e));
 
       // 3. Fetch Deep Analysis (Timeline & Bias) Automatically (retryable)
@@ -285,7 +285,7 @@ function App() {
                 <input className="landing-input" type="text" placeholder="Paste news article URL here..." value={url} onChange={(e) => setUrl(e.target.value)} />
                 <button className="landing-button" onClick={analyze}>Analyze Link</button>
               </div>
-              <p className="input-hint">Paste a link from a non-paywalled news site. Use PDF for paywalled content.</p>
+              <p className="input-hint">Works well: BBC, Al Jazeera, The Guardian, NPR; Upload PDF instead: Reuters, AP News, Bloomberg.</p>
             </div>
           ) : (
             <div className="pdf-section">
@@ -294,14 +294,14 @@ function App() {
                 <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>📄</div>
                 {file ? <div className="file-info">{file.name}</div> : <p>Drag your news PDF here or click to browse</p>}
               </div>
-              <p className="input-hint">Best for paywalled articles (NYT, Bloomberg, etc.) saved as PDF.</p>
+              <p className="input-hint">Best for paywalled or blocked sources (Reuters, AP News, Bloomberg, NYT, etc.) saved as PDF.</p>
               <button className="secondary-btn" onClick={analyze} disabled={!file} style={{ width: "100%", marginTop: 16, borderRadius: 8, height: 48, background: "var(--accent)", color: "#1a1e1a", fontWeight: "600", border: "none", cursor: "pointer" }}>Analyze Document</button>
             </div>
           )}
           {error && <div className="landing-error">{error}</div>}
 
           <p className="cold-start-note">
-            Heads up: the first analysis may take ~30–60 seconds. This demo runs on a free server that
+            The first analysis may take ~30–60 seconds. This demo runs on a free server that
             sleeps when idle, so the initial request has to wake it up. Subsequent analyses are fast.
           </p>
         </div>
@@ -333,29 +333,29 @@ function App() {
           <TileLayer className="base-tiles" attribution='Tiles &copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}" />
           {/* Political boundaries + soft gray labels */}
           <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
-          
+
           <MapClickHandler onClear={() => { setSelectedTimeline(null); setSheet(null); }} />
 
           {result?.details?.lat !== undefined && result?.details?.lon !== undefined && !isNaN(result.details.lat) && !isNaN(result.details.lon) && (
-            <Marker position={[result.details.lat, result.details.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker incident-marker" style="background: ${PIN.incident}; --ring: ${RING.incident};"></div>`, iconSize:[22,22], iconAnchor:[11,11] })}>
-              <Popup><div style={{color:"black"}}><strong>{result.details.location || "Unknown Location"}</strong><br/>Incident Site</div></Popup>
+            <Marker position={[result.details.lat, result.details.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker incident-marker" style="background: ${PIN.incident}; --ring: ${RING.incident};"></div>`, iconSize: [22, 22], iconAnchor: [11, 11] })}>
+              <Popup><div style={{ color: "black" }}><strong>{result.details.location || "Unknown Location"}</strong><br />Incident Site</div></Popup>
             </Marker>
           )}
 
           {result?.all_locations === undefined ? null : (result.all_locations || [])
             .filter(loc => {
-               if (!result?.details?.lat || !result?.details?.lon) return true;
-               // Filter out pins that are roughly at the exact same coordinate as the primary incident site
-               const isDuplicate = Math.abs(loc.lat - result.details.lat) < 0.01 && Math.abs(loc.lon - result.details.lon) < 0.01;
-               return !isDuplicate;
+              if (!result?.details?.lat || !result?.details?.lon) return true;
+              // Filter out pins that are roughly at the exact same coordinate as the primary incident site
+              const isDuplicate = Math.abs(loc.lat - result.details.lat) < 0.01 && Math.abs(loc.lon - result.details.lon) < 0.01;
+              return !isDuplicate;
             })
             .map((loc, idx) => (
-            loc?.lat !== undefined && loc?.lon !== undefined && !isNaN(loc.lat) && !isNaN(loc.lon) && (
-              <Marker key={idx} position={[loc.lat, loc.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker" style="background: ${loc.type === 'actor_base' ? PIN.actor_base : PIN.conflict}; --ring: ${loc.type === 'actor_base' ? RING.actor_base : RING.conflict};"></div>`, iconSize:[18,18], iconAnchor:[9,9] })}>
-                <Popup><div style={{color:"black"}}><strong>{loc.name || "Unnamed Area"}</strong><br/>{loc.description || "No description provided."}</div></Popup>
-              </Marker>
-            )
-          ))}
+              loc?.lat !== undefined && loc?.lon !== undefined && !isNaN(loc.lat) && !isNaN(loc.lon) && (
+                <Marker key={idx} position={[loc.lat, loc.lon]} icon={L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker" style="background: ${loc.type === 'actor_base' ? PIN.actor_base : PIN.conflict}; --ring: ${loc.type === 'actor_base' ? RING.actor_base : RING.conflict};"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] })}>
+                  <Popup><div style={{ color: "black" }}><strong>{loc.name || "Unnamed Area"}</strong><br />{loc.description || "No description provided."}</div></Popup>
+                </Marker>
+              )
+            ))}
 
           {result?.timeline === undefined ? null : (result.timeline || []).map((ev, idx) => (
             ev?.lat !== undefined && ev?.lon !== undefined && !isNaN(ev.lat) && !isNaN(ev.lon) && (
@@ -368,10 +368,10 @@ function App() {
                   mouseout: () => setHoverTimeline(null),
                 }}
                 icon={selectedTimeline === idx
-                  ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-selected" style="background: ${PIN.timeline}; --ring: ${RING.timeline};"></div>`, iconSize:[20,20], iconAnchor:[10,10] })
+                  ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-selected" style="background: ${PIN.timeline}; --ring: ${RING.timeline};"></div>`, iconSize: [20, 20], iconAnchor: [10, 10] })
                   : hoverTimeline === idx
-                    ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-hover" style="background: ${PIN.timeline}; --ring: ${RING.timeline};"></div>`, iconSize:[16,16], iconAnchor:[8,8] })
-                    : L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker" style="background: ${PIN.timeline}; --ring: ${RING.timeline}; width: 11px; height: 11px;"></div>`, iconSize:[11,11], iconAnchor:[6,6] })}
+                    ? L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker-hover" style="background: ${PIN.timeline}; --ring: ${RING.timeline};"></div>`, iconSize: [16, 16], iconAnchor: [8, 8] })
+                    : L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-marker timeline-marker" style="background: ${PIN.timeline}; --ring: ${RING.timeline}; width: 11px; height: 11px;"></div>`, iconSize: [11, 11], iconAnchor: [6, 6] })}
               />
             )
           ))}
@@ -394,17 +394,17 @@ function App() {
             <h1 style={{ fontSize: "2rem" }}>Conflict Lens</h1>
             <div className="section-title" style={{ marginTop: 16 }}>Key Details</div>
             <div className="details-grid">
-              <div className="detail-row" style={{alignItems: 'start'}}>
+              <div className="detail-row" style={{ alignItems: 'start' }}>
                 <span className="detail-label">Actors:</span>
                 <span className="detail-value">
                   {result?.details?.actors ? (
-                    Array.isArray(result.details.actors) 
-                      ? result.details.actors.join(", ") 
+                    Array.isArray(result.details.actors)
+                      ? result.details.actors.join(", ")
                       : (
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
-                          {result.details.actors.countries_and_states?.length > 0 && <div><span style={{color: 'var(--text-dim-dash)', fontSize: '0.75rem'}}>STATES:</span> {result.details.actors.countries_and_states.join(", ")}</div>}
-                          {result.details.actors.groups?.length > 0 && <div><span style={{color: 'var(--text-dim-dash)', fontSize: '0.75rem'}}>GROUPS:</span> {result.details.actors.groups.join(", ")}</div>}
-                          {result.details.actors.specific_people?.length > 0 && <div><span style={{color: 'var(--text-dim-dash)', fontSize: '0.75rem'}}>PEOPLE:</span> {result.details.actors.specific_people.join(", ")}</div>}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {result.details.actors.countries_and_states?.length > 0 && <div><span style={{ color: 'var(--text-dim-dash)', fontSize: '0.75rem' }}>STATES:</span> {result.details.actors.countries_and_states.join(", ")}</div>}
+                          {result.details.actors.groups?.length > 0 && <div><span style={{ color: 'var(--text-dim-dash)', fontSize: '0.75rem' }}>GROUPS:</span> {result.details.actors.groups.join(", ")}</div>}
+                          {result.details.actors.specific_people?.length > 0 && <div><span style={{ color: 'var(--text-dim-dash)', fontSize: '0.75rem' }}>PEOPLE:</span> {result.details.actors.specific_people.join(", ")}</div>}
                         </div>
                       )
                   ) : "N/A"}
@@ -422,14 +422,14 @@ function App() {
             <div className="section-title">Incident Summary</div>
             <div className="summary-box">
               {typeof result.summary === 'string' ? result.summary : (
-                <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div><strong>The Latest:</strong> {result?.summary?.headline}</div>
                   <div><strong>Backdrop:</strong> {result?.summary?.historical_context}</div>
                   <div><strong>Why it matters:</strong> {result?.summary?.importance}</div>
                 </div>
               )}
             </div>
-            
+
             <div className="section-title">Journalistic Analysis</div>
             <div className="analysis-box">
               {deepError ? (
@@ -438,9 +438,9 @@ function App() {
                   <button className="retry-btn" onClick={() => runDeepAnalysis(activeSessionId)}>↻ Retry analysis</button>
                 </div>
               ) : result.bias_check === undefined ? (
-                <div className="analysis-item" style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                   <div style={{width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite'}} />
-                   <span style={{color: 'var(--text-dim)'}}>Performing deep bias analysis...</span>
+                <div className="analysis-item" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ color: 'var(--text-dim)' }}>Performing deep bias analysis...</span>
                 </div>
               ) : (
                 <>
@@ -478,39 +478,39 @@ function App() {
               <span className="legend-item"><span className="legend-dot" style={{ background: PIN.timeline }} />Timeline event</span>
             </div>
           </div>
-           {deepError ? (
-              <div className="analysis-error" style={{ margin: '12px 24px' }}>
-                 <p>Timeline couldn’t be extracted.</p>
-                 <button className="retry-btn" onClick={() => runDeepAnalysis(activeSessionId)}>↻ Retry</button>
-              </div>
-           ) : result.timeline === undefined ? (
-              <div style={{display: 'flex', alignItems: 'center', padding: '24px', gap: '12px'}}>
-                 <div style={{width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite'}} />
-                 <span style={{color: 'var(--text-dim)'}}>Extracting historical timeline...</span>
-              </div>
-           ) : result.timeline.length === 0 ? (
-              <div style={{padding: '24px', color: 'var(--text-dim)'}}>No timeline events found in this article.</div>
-           ) : (
+          {deepError ? (
+            <div className="analysis-error" style={{ margin: '12px 24px' }}>
+              <p>Timeline couldn’t be extracted.</p>
+              <button className="retry-btn" onClick={() => runDeepAnalysis(activeSessionId)}>↻ Retry</button>
+            </div>
+          ) : result.timeline === undefined ? (
+            <div style={{ display: 'flex', alignItems: 'center', padding: '24px', gap: '12px' }}>
+              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
+              <span style={{ color: 'var(--text-dim)' }}>Extracting historical timeline...</span>
+            </div>
+          ) : result.timeline.length === 0 ? (
+            <div style={{ padding: '24px', color: 'var(--text-dim)' }}>No timeline events found in this article.</div>
+          ) : (
             <div className="timeline-scroll" onScroll={() => setScrollTick((t) => t + 1)}>
               <div className="timeline-inner">
-              <div className="timeline-track" />
-              {result.timeline?.map((ev, i) => (
-                <div
-                  key={i}
-                  id={`timeline-card-${i}`}
-                  className={`timeline-event ${selectedTimeline === i ? "active" : ""} ${hoverTimeline === i ? "hovered" : ""}`}
-                  onClick={(e) => { e.stopPropagation(); selectTimeline(ev, i); }}
-                  onMouseEnter={() => setHoverTimeline(i)}
-                  onMouseLeave={() => setHoverTimeline(null)}
-                >
-                  <span className="timeline-node" />
-                  <div className="timeline-date">{ev.date}</div>
-                  <div className="timeline-text">{ev.event}</div>
-                </div>
-              ))}
+                <div className="timeline-track" />
+                {result.timeline?.map((ev, i) => (
+                  <div
+                    key={i}
+                    id={`timeline-card-${i}`}
+                    className={`timeline-event ${selectedTimeline === i ? "active" : ""} ${hoverTimeline === i ? "hovered" : ""}`}
+                    onClick={(e) => { e.stopPropagation(); selectTimeline(ev, i); }}
+                    onMouseEnter={() => setHoverTimeline(i)}
+                    onMouseLeave={() => setHoverTimeline(null)}
+                  >
+                    <span className="timeline-node" />
+                    <div className="timeline-date">{ev.date}</div>
+                    <div className="timeline-text">{ev.event}</div>
+                  </div>
+                ))}
               </div>
             </div>
-           )}
+          )}
         </div>
 
         {/* Floating full-text popover — pops out above the panel, card stays fixed-size */}
