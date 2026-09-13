@@ -246,12 +246,12 @@ h1, .serif-heading {
   flex-direction: column;
 }
 
-.header-panel { grid-area: header; align-self: start; justify-self: start; width: 280px; }
+.header-panel { grid-area: header; justify-self: start; width: 280px; height: 100%; }
 .sidebar-panel { grid-area: sidebar; height: 100%; }
 .timeline-panel { grid-area: bottom; width: 100%; }
 
 .sidebar-content { padding: 16px; overflow-y: auto; flex: 1; }
-.header-content { padding: 16px; }
+.header-content { padding: 16px; overflow-y: auto; flex: 1; }
 
 .section-title {
   font-size: 0.65rem;
@@ -365,17 +365,21 @@ h1, .serif-heading {
 
 /* Back Button */
 .back-btn {
-  background: transparent;
-  border: 1px solid rgba(0,0,0,0.18);
-  color: var(--text-dim-dash);
+  background: var(--accent-dash);
+  border: 1px solid var(--accent-dash);
+  color: #fff;
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.7rem;
+  font-weight: 600;
   margin-bottom: 8px;
   transition: all 0.2s;
 }
-.back-btn:hover { background: rgba(0,0,0,0.05); color: var(--text-main-dash); }
+.back-btn:hover {
+  background: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
+  border-color: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
+}
 
 /* Shared Spinner */
 .spinner {
@@ -476,9 +480,14 @@ h1, .serif-heading {
   }
   .m-title { font-family: 'Newsreader', serif; font-size: 1.15rem; font-weight: 600; color: var(--text-main-dash); }
   .m-back {
-    background: rgba(255,255,255,0.85); border: 1px solid rgba(0,0,0,0.12);
-    color: var(--text-main-dash); font-size: 0.72rem; font-weight: 600;
+    background: var(--accent-dash); border: 1px solid var(--accent-dash);
+    color: #fff; font-size: 0.72rem; font-weight: 600;
     padding: 7px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .m-back:hover {
+    background: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
+    border-color: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
   }
 
   /* Bottom nav bar — one continuous bar split into three equal segments */
