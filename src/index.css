@@ -365,8 +365,8 @@ h1, .serif-heading {
 
 /* Back Button */
 .back-btn {
-  background: var(--accent-dash);
-  border: 1px solid var(--accent-dash);
+  background: color-mix(in srgb, var(--accent-dash) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-dash) 78%, transparent);
   color: #fff;
   padding: 4px 8px;
   border-radius: 4px;
@@ -377,8 +377,8 @@ h1, .serif-heading {
   transition: all 0.2s;
 }
 .back-btn:hover {
-  background: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
-  border-color: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
+  background: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
+  border-color: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
 }
 
 /* Shared Spinner */
@@ -480,14 +480,14 @@ h1, .serif-heading {
   }
   .m-title { font-family: 'Newsreader', serif; font-size: 1.15rem; font-weight: 600; color: var(--text-main-dash); }
   .m-back {
-    background: var(--accent-dash); border: 1px solid var(--accent-dash);
+    background: color-mix(in srgb, var(--accent-dash) 78%, transparent); border: 1px solid color-mix(in srgb, var(--accent-dash) 78%, transparent);
     color: #fff; font-size: 0.72rem; font-weight: 600;
     padding: 7px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap;
     transition: background 0.2s, border-color 0.2s;
   }
   .m-back:hover {
-    background: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
-    border-color: color-mix(in srgb, var(--accent-dash) 70%, white 30%);
+    background: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
+    border-color: color-mix(in srgb, var(--accent-dash) 60%, white 30%);
   }
 
   /* Bottom nav bar — one continuous bar split into three equal segments */
