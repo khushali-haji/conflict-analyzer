@@ -164,6 +164,10 @@ h1, .serif-heading {
   font-style: italic;
 }
 
+.input-hint .pub-name {
+  font-style: normal;
+}
+
 .landing-error {
   color: var(--danger);
   text-align: center;

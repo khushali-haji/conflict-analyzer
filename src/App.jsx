@@ -285,7 +285,7 @@ function App() {
                 <input className="landing-input" type="text" placeholder="Paste news article URL here..." value={url} onChange={(e) => setUrl(e.target.value)} />
                 <button className="landing-button" onClick={analyze}>Analyze Link</button>
               </div>
-              <p className="input-hint">Works well: BBC, Al Jazeera, The Guardian, NPR; Upload PDF instead: Reuters, AP News, Bloomberg.</p>
+              <p className="input-hint">Paste the URL of a news article to get an analysis. Paywalled content needs a PDF upload instead.<br />Works well: <span className="pub-name">BBC, Al Jazeera, The Guardian, NPR</span>; Upload PDF instead: <span className="pub-name">Reuters, AP News, Bloomberg</span>.</p>
             </div>
           ) : (
             <div className="pdf-section">
@@ -294,7 +294,7 @@ function App() {
                 <div style={{ fontSize: "2.5rem", marginBottom: 10 }}>📄</div>
                 {file ? <div className="file-info">{file.name}</div> : <p>Drag your news PDF here or click to browse</p>}
               </div>
-              <p className="input-hint">Best for paywalled or blocked sources (Reuters, AP News, Bloomberg, NYT, etc.) saved as PDF.</p>
+              <p className="input-hint">Best for paywalled or blocked sources (<span className="pub-name">Reuters, AP News, Bloomberg, NYT</span>, etc.) saved as PDF.</p>
               <button className="secondary-btn" onClick={analyze} disabled={!file} style={{ width: "100%", marginTop: 16, borderRadius: 8, height: 48, background: "var(--accent)", color: "#1a1e1a", fontWeight: "600", border: "none", cursor: "pointer" }}>Analyze Document</button>
             </div>
           )}
